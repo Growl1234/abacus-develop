@@ -2,10 +2,11 @@ FROM nvidia/cuda:12.2.0-devel-ubuntu22.04
 
 RUN apt update && apt install -y --no-install-recommends \
     libopenblas-openmp-dev liblapack-dev libscalapack-mpi-dev libfftw3-dev libcereal-dev \
-    libxc-dev libgtest-dev libgmock-dev libbenchmark-dev python3-numpy \
-    bc cmake git g++ make time sudo unzip vim wget libopenmpi-dev gfortran libtool-bin
+    libxc-dev libgtest-dev libgmock-dev libbenchmark-dev python3-numpy ca-certificates \
+    bc cmake git g++ make time sudo unzip vim wget libopenmpi-dev gfortran libtool-bin && \
+    rm -rf /var/lib/apt/lists/*
 
-ENV GIT_SSL_NO_VERIFY=true TERM=xterm-256color \
+ENV TERM=xterm-256color \
     OMPI_ALLOW_RUN_AS_ROOT=1 OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 \
     OMPI_MCA_btl_vader_single_copy_mechanism=none
 
@@ -30,7 +31,7 @@ RUN cd /tmp && \
     tar -xzf rapidjson-24b5e7a.tar.gz && cd rapidjson-24b5e7a && \
     cmake -B build -DRAPIDJSON_BUILD_DOC=OFF -DRAPIDJSON_BUILD_EXAMPLES=OFF -DRAPIDJSON_BUILD_TESTS=OFF && \
     cmake --build build --target install && \
-    cd /tmp && rm -r rapidjson-24b5e7a
+    cd /tmp && rm -rf rapidjson-24b5e7a rapidjson-24b5e7a.tar.gz
 
 ADD https://api.github.com/repos/deepmodeling/abacus-develop/git/refs/heads/develop /dev/null
 
