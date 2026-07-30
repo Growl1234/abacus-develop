@@ -18,12 +18,11 @@ RUN cd /tmp && \
     cd /tmp && rm -rf elpa-$ELPA_VER
 
 # RapidJSON
-RUN cd /tmp && \
-    wget --quiet https://codeload.github.com/Tencent/rapidjson/tar.gz/24b5e7a -O rapidjson-24b5e7a.tar.gz && \
-    tar -xzf rapidjson-24b5e7a.tar.gz && cd rapidjson-24b5e7a && \
-    cmake -B build -DRAPIDJSON_BUILD_DOC=OFF -DRAPIDJSON_BUILD_EXAMPLES=OFF -DRAPIDJSON_BUILD_TESTS=OFF && \
-    cmake --build build --target install && \
-    cd /tmp && rm -r rapidjson-24b5e7a
+RUN cd /tmp && wget --quiet https://codeload.github.com/Tencent/rapidjson/tar.gz/24b5e7a -O rapidjson-24b5e7a.tar.gz
+RUN tar -xzf rapidjson-24b5e7a.tar.gz && cd rapidjson-24b5e7a
+RUN cmake -B build -DRAPIDJSON_BUILD_DOC=OFF -DRAPIDJSON_BUILD_EXAMPLES=OFF -DRAPIDJSON_BUILD_TESTS=OFF
+RUN cmake --build build --target install
+RUN cd /tmp && rm -r rapidjson-24b5e7a
 
 # LibTorch (Note: Using pre-built Torch library with MKL might cause issues)
 RUN wget -q https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.0.0%2Bcpu.zip -O /tmp/libtorch.zip && \
