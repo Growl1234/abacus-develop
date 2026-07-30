@@ -27,11 +27,12 @@ RUN wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-wit
     unzip -q libtorch.zip -d /opt && rm libtorch.zip
 
 # RapidJSON
-RUN cd /tmp && wget --quiet https://codeload.github.com/Tencent/rapidjson/tar.gz/24b5e7a -O rapidjson-24b5e7a.tar.gz
-RUN tar -xzf rapidjson-24b5e7a.tar.gz && cd rapidjson-24b5e7a
-RUN cmake -B build -DRAPIDJSON_BUILD_DOC=OFF -DRAPIDJSON_BUILD_EXAMPLES=OFF -DRAPIDJSON_BUILD_TESTS=OFF
-RUN cmake --build build --target install
-RUN cd /tmp && rm -r rapidjson-24b5e7a
+RUN cd /tmp && \
+    wget --quiet https://codeload.github.com/Tencent/rapidjson/tar.gz/24b5e7a -O rapidjson-24b5e7a.tar.gz && \
+    tar -xzf rapidjson-24b5e7a.tar.gz && cd rapidjson-24b5e7a && \
+    cmake -B build -DRAPIDJSON_BUILD_DOC=OFF -DRAPIDJSON_BUILD_EXAMPLES=OFF -DRAPIDJSON_BUILD_TESTS=OFF && \
+    cmake --build build --target install && \
+    cd /tmp && rm -r rapidjson-24b5e7a
 
 ENV CMAKE_PREFIX_PATH=/opt/libtorch/share/cmake
 
