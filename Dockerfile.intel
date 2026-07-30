@@ -3,7 +3,8 @@ FROM intel/oneapi-hpckit:2025.2.2-0-devel-ubuntu22.04
 RUN apt-get update && apt-get install -y \
     bc cmake git gnupg gcc g++ python3-numpy sudo wget vim unzip \
     libcereal-dev libxc-dev libgtest-dev libgmock-dev libbenchmark-dev \
-    pkg-config build-essential autoconf automake libtool
+    pkg-config build-essential autoconf automake libtool && \
+    rm -rf /var/lib/apt/lists/*
 
 # https://elpa.mpcdf.mpg.de/software/tarball-archive/ELPA_TARBALL_ARCHIVE.html
 RUN cd /tmp && \
@@ -23,7 +24,7 @@ RUN cd /tmp && \
     tar -xzf rapidjson-24b5e7a.tar.gz && cd rapidjson-24b5e7a && \
     cmake -B build -DRAPIDJSON_BUILD_DOC=OFF -DRAPIDJSON_BUILD_EXAMPLES=OFF -DRAPIDJSON_BUILD_TESTS=OFF && \
     cmake --build build --target install && \
-    cd /tmp && rm -r rapidjson-24b5e7a
+    cd /tmp && rm -r rapidjson-24b5e7a rapidjson-24b5e7a.tar.gz
 
 # LibTorch (Note: Using pre-built Torch library with MKL might cause issues)
 RUN wget -q https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.0.0%2Bcpu.zip -O /tmp/libtorch.zip && \
