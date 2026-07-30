@@ -33,7 +33,7 @@ RUN cd /tmp && \
     tar -xzf rapidjson-24b5e7a.tar.gz && cd rapidjson-24b5e7a && \
     cmake -B build -DRAPIDJSON_BUILD_DOC=OFF -DRAPIDJSON_BUILD_EXAMPLES=OFF -DRAPIDJSON_BUILD_TESTS=OFF && \
     cmake --build build --target install && \
-    cd /tmp && rm -r rapidjson-24b5e7a
+    cd /tmp && rm -r rapidjson-24b5e7a rapidjson-24b5e7a.tar.gz
 
 ENV CMAKE_PREFIX_PATH=/opt/libtorch/share/cmake
 
