@@ -23,7 +23,7 @@ defaults:
 jobs:
   build_container_and_push:
     name: Build and push (${{ matrix.dockerfile }})
-    runs-on: X64
+    runs-on: ubuntu-latest
 
     if: >-
       github.repository == 'deepmodeling/abacus-develop' &&
