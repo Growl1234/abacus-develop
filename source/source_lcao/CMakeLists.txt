@@ -22,43 +22,24 @@ if(ENABLE_LCAO)
         spar_hsr.cpp
         spar_st.cpp
         spar_u.cpp
-<<<<<<< HEAD
         lcao_set.cpp
-		lcao_set_fs.cpp
-		lcao_set_st.cpp
-		lcao_nl_mu.cpp	
+        lcao_set_fs.cpp
+        lcao_set_st.cpp
+        lcao_nl_mu.cpp
         lcao_set_zero.cpp
         lcao_allocate.cpp
         lcao_set_mat2d.cpp
         lcao_init_basis.cpp
-=======
-        LCAO_set.cpp
-        LCAO_set_fs.cpp
-        LCAO_set_st.cpp
-        LCAO_nl_mu.cpp
-        LCAO_set_zero.cpp
-        LCAO_allocate.cpp
-        LCAO_set_mat2d.cpp
-        LCAO_init_basis.cpp
->>>>>>> 2a092828f (CMake cleanup of source_lcao)
         setup_nonlocal.cpp
         setup_exx.cpp
         setup_deepks.cpp
         setup_dm.cpp
         rho_tau_lcao.cpp
-<<<<<<< HEAD
-		record_adj.cpp
+        record_adj.cpp
         center2orb.cpp
         center2orb_orb11.cpp
         center2orb_orb21.cpp
         center2orb_orb22.cpp
-=======
-        record_adj.cpp
-        center2_orb.cpp
-        center2_orb-orb11.cpp
-        center2_orb-orb21.cpp
-        center2_orb-orb22.cpp
->>>>>>> 2a092828f (CMake cleanup of source_lcao)
         wavefunc_in_pw.cpp
     )
 
