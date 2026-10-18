@@ -1,0 +1,49 @@
+name: Build Documentation
+on:
+  push:
+  pull_request:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container: ghcr.io/deepmodeling/abacus-gnu
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+        with:
+          submodules: recursive
+
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pip ninja-build fonts-freefont-otf latexmk \
+            texlive-latex-recommended texlive-fonts-recommended \
+            texlive-xetex texlive-latex-extra
+          pip install -r docs/requirements.txt
+
+      - name: Build and install ABACUS
+        run: |
+          git config --global --add safe.directory `pwd`
+          [ -d "build" ] && rm -rf build
+          cmake -B build -G Ninja -DENABLE_MPI=OFF -DENABLE_LCAO=OFF
+          cmake --build build -j "$(nproc)"
+
+      - name: Build documentation
+        run: |
+          abacus --generate-parameters-yaml > docs/parameters.yaml
+          python3 docs/generate_input_main.py docs/parameters.yaml
+          sphinx-build -M html docs _build -W -j "$(nproc)"
+          sphinx-build -M latexpdf docs _build -W -j "$(nproc)"
+
+      - name: Publish to Read the Docs
+        uses: readthedocs/upload-action@main
+        with:
+          token: ${{ secrets.READTHEDOCS_TOKEN }}
+          project-slug: abacus-rtd
+          html: _build/html
+          pdf: _build/latex/abacus.pdf

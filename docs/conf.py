@@ -113,9 +113,16 @@ mathjax_path = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-mml
 # deepmodeling_current_site = 'Tutorials'
 latex_elements = {
     'extraclassoptions':'openany,oneside',
-    # LaTeX-side shims for MathJax-dialect macros used in the markdown
-    # sources. MathJax (HTML rendering) provides these natively, which is
-    # why the gap only surfaces in the PDF build.
+    # Sphinx expects FreeFont in .otf format, while Fedora/RHEL ship .ttf files.
+    # Let fontspec resolve the installed fonts by family name.
+    'fontpkg': r'''
+\setmainfont{FreeSerif}
+\setsansfont{FreeSans}
+\setmonofont{FreeMono}[Scale=0.9]
+''',
+    # LaTeX-side shims for MathJax-dialect macros used in the markdown sources.
+    # MathJax (HTML rendering) provides these natively, which is why the gap
+    # only surfaces in the PDF build.
     'preamble': r'''
 % Dirac notation: MathJax has \ket/\bra built in; LaTeX needs braket.
 \usepackage{braket}
