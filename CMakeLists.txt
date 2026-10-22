@@ -10,16 +10,6 @@ if(EXISTS "${LOC_PATH}")
 endif()
 
 include(CMakeDependentOption)
-# TODO: Drop this warning; it shouldn't be there as cmake_dependent_option is a
-# widely-used built-in feature
-message(
-  WARNING
-    "The build system now uses cmake_dependent_option extensively.\n"
-    "Many advanced options are now conditionally enabled based on their dependencies; "
-    "when dependency conditions are not met, the corresponding options will be"
-    "automatically turned OFF and hidden in cmake-gui/ccmake.\n"
-    "Please review your configuration if you previously set these options manually."
-)
 
 if(POLICY CMP0135) # https://cmake.org/cmake/help/git-stage/policy/CMP0135.html
   cmake_policy(SET CMP0135 NEW)
