@@ -1,4 +1,4 @@
-FROM intel/oneapi-hpckit:2025.2.2-0-devel-ubuntu22.04
+FROM intel/oneapi-toolkit:2026.2.0-devel-ubuntu24.04
 
 RUN apt-get update && apt-get install -y \
     bc cmake git gnupg gcc g++ python3-numpy sudo wget vim unzip \
