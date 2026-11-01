@@ -89,9 +89,8 @@ if(ENABLE_COVERAGE)
 endif()
 
 if(BUILD_TESTING)
+  # TODO: classify the serial and parrallel tests
   if(ENABLE_MPI)
-
-  #Zhang Xiaoyang: A temporary solution. Please classify the serial and parrallel tests later. 2024-7-8
     add_subdirectory(test)
     add_subdirectory(test_parallel)
     add_subdirectory(kernels/test)
