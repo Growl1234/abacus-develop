@@ -21,8 +21,13 @@ void Gint_env_gamma::cal_env_band(const int iband)
 {
     ModuleBase::TITLE("Gint", "cal_gint_env");
     ModuleBase::timer::start("Gint", "cal_gint_env");
-    ModuleBase::GlobalFunc::ZEROS(rho_, gint_info_->get_local_mgrid_num());
-    const double *wfc_gint_band = &wfc_gint_[iband * gint_info_->get_lgd()];
+    const auto &layout = gint_info_->layout();
+    const bool redistribute = layout.needs_transfer();
+    const int points = gint_info_->get_local_mgrid_num();
+    std::vector<double> local(redistribute ? points : 0);
+    double *values = redistribute ? local.data() : rho_;
+    std::fill_n(values, points, 0.0);
+    const double *wfc_gint_band = wfc_gint_.empty() ? nullptr : wfc_gint_.data() + iband * gint_info_->get_lgd();
 #pragma omp parallel
     {
         PhiOperator phi_op;
@@ -39,8 +44,12 @@ void Gint_env_gamma::cal_env_band(const int iband)
             const int phi_len = phi_op.get_rows() * phi_op.get_cols();
             phi.resize(phi_len);
             phi_op.set_phi(phi.data());
-            phi_op.cal_env_gamma(phi.data(), wfc_gint_band, gint_info_->get_trace_lo(), rho_);
+            phi_op.cal_env_gamma(phi.data(), wfc_gint_band, gint_info_->get_trace_lo(), values);
         }
+    }
+    if (redistribute)
+    {
+        layout.copy_to_fft(values, rho_);
     }
     ModuleBase::timer::end("Gint", "cal_gint_env");
 }

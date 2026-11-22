@@ -23,9 +23,3 @@ For LCAO calculation, the matrix elements of the local potential is evaluated us
 Setting [bx](../input_files/input-main.md#bx), [by](../input_files/input-main.md#by), and [bz](../input_files/input-main.md#bz) to values other than default might help with the efficiency of grid integration.
 
 > Note: the choice of bx, by, bz should be integer factors of the dimension of the real space FFT grid in each direction.
-
-## Low Dimension Materials
-
-In grid integration, we chose to parallelize the grid points along the z direction. Therefore, when using LCAO calculation for low dimension materials, it is recommended to put the material more evenly in z direction to avoid imbalanced workload on different MPI threads.
-
-Namely, when calculating 2D materials, it is better to put the material in xz or yz direction; while for 1D materials, it is better to align the material with the z direction.

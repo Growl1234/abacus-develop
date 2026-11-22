@@ -12,6 +12,10 @@ namespace Parallel_Common
 {
 
 #ifdef __MPI
+template <typename T>
+void alltoallv(const T* src, const int* send_counts, const int* send_offsets,
+               T* dst, const int* recv_counts, const int* recv_offsets, MPI_Comm comm);
+
 inline int comm_size(const MPI_Comm comm)
 {
     int size = 0;

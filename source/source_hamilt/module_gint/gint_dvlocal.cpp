@@ -22,6 +22,8 @@ void Gint_dvlocal::init_hr_gint_()
 
 void Gint_dvlocal::cal_hr_gint_()
 {
+    std::vector<double> storage;
+    const double *potential = gint_info_->layout().from_fft(vr_eff_, storage);
 #pragma omp parallel
     {
         PhiOperator phi_op;
@@ -46,7 +48,7 @@ void Gint_dvlocal::cal_hr_gint_()
             dphi_y.resize(phi_len);
             dphi_z.resize(phi_len);
             phi_op.set_phi_dphi(phi.data(), dphi_x.data(), dphi_y.data(), dphi_z.data());
-            phi_op.phi_mul_vldr3(vr_eff_, dr3_, phi.data(), phi_vldr3.data());
+            phi_op.phi_mul_vldr3(potential, dr3_, phi.data(), phi_vldr3.data());
             const PhiOperator::TriPart tri = full_triangle_ ? PhiOperator::TriPart::Full : PhiOperator::TriPart::Upper;
             phi_op.phi_mul_phi(phi_vldr3.data(), dphi_x.data(), pvdpRx, tri);
             phi_op.phi_mul_phi(phi_vldr3.data(), dphi_y.data(), pvdpRy, tri);

@@ -31,8 +31,13 @@ void Gint_env_k::cal_env_band(const int iband)
     ModuleBase::TITLE("Gint", "cal_gint_env");
     ModuleBase::timer::start("Gint", "cal_gint_env");
     const int local_mgrid_num = gint_info_->get_local_mgrid_num();
-    std::fill(wfc_, wfc_ + npol_ * local_mgrid_num, std::complex<double>(0.0, 0.0));
-    const std::complex<double> *wfc_gint_band = &wfc_gint_[iband * gint_info_->get_lgd()];
+    const auto &layout = gint_info_->layout();
+    const bool redistribute = layout.needs_transfer();
+    std::vector<std::complex<double>> local(redistribute ? npol_ * local_mgrid_num : 0);
+    auto *values = redistribute ? local.data() : wfc_;
+    std::fill_n(values, npol_ * local_mgrid_num, std::complex<double>{});
+    const std::complex<double> *wfc_gint_band =
+        wfc_gint_.empty() ? nullptr : wfc_gint_.data() + iband * gint_info_->get_lgd();
 #pragma omp parallel
     {
         PhiOperator phi_op;
@@ -50,7 +55,14 @@ void Gint_env_k::cal_env_band(const int iband)
             phi.resize(phi_len);
             phi_op.set_phi(phi.data());
             phi_op.cal_env_k(
-                phi.data(), wfc_gint_band, gint_info_->get_trace_lo(), ik_, npol_, kvec_d_, local_mgrid_num, wfc_);
+                phi.data(), wfc_gint_band, gint_info_->get_trace_lo(), ik_, npol_, kvec_d_, local_mgrid_num, values);
+        }
+    }
+    if (redistribute)
+    {
+        for (int spinor = 0; spinor < npol_; ++spinor)
+        {
+            layout.copy_to_fft(values + spinor * local_mgrid_num, wfc_ + spinor * layout.fft_size());
         }
     }
     ModuleBase::timer::end("Gint", "cal_gint_env");

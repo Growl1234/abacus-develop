@@ -98,9 +98,8 @@ void ESolver_BSE<T, TR>::before_all_runners(BaseCell &basecell, const Input_para
         PARAM.globalv.search_pbc, GlobalV::ofs_running, this->gd(), *this->ucell_, search_radius, inp.test_atom_input);
 
     this->gint_info_.reset(new ModuleGint::GintInfo(
-        this->pw_big->nbx, this->pw_big->nby, this->pw_big->nbz, this->pw_rho->nx, this->pw_rho->ny, this->pw_rho->nz,
-        0, 0, this->pw_big->nbzp_start, this->pw_big->nbx, this->pw_big->nby, this->pw_big->nbzp, this->orb_.Phi, ucell,
-        this->gd(), inp.nspin, PARAM.globalv.gamma_only_local, PARAM.globalv.domag, inp.device == "gpu", inp.nstream));
+        *this->pw_big, this->ofs_running_, this->orb_.Phi, ucell, this->gd(), inp.nspin, PARAM.globalv.gamma_only_local,
+        PARAM.globalv.domag, inp.device == "gpu", inp.nstream));
     ModuleGint::Gint::set_gint_info(this->gint_info_.get());
 
     this->pot.resize(this->nspin, nullptr);

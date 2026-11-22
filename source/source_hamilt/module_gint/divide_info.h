@@ -1,62 +1,77 @@
 #ifndef ABACUS_SOURCE_HAMILT_MODULE_GINT_DIVIDE_INFO_H
 #define ABACUS_SOURCE_HAMILT_MODULE_GINT_DIVIDE_INFO_H
 
-#include "biggrid_info.h"
-#include "localcell_info.h"
-#include "unitcell_info.h"
+#include "source_base/vector3.h"
+#include <vector>
+
+class UnitCell;
+
+namespace ModulePW
+{
+class PW_Basis_Big;
+}
 
 namespace ModuleGint
 {
 
+enum class SlabAxis
+{
+    a,
+    b,
+    c
+};
+
+// Ownership of whole integration blocks and transfers to/from the FFT's c slabs.
 class DivideInfo
 {
   public:
-    // constructor
-    DivideInfo(
-        int startidx_bx_old,
-        int startidx_by_old,
-        int startidx_bz_old,
-        int nbx_old,
-        int nby_old,
-        int nbz_old,
-        std::shared_ptr<const UnitCellInfo> unitcell_info,
-        bool is_redivided = false);
+    DivideInfo(const ModulePW::PW_Basis_Big &grid, SlabAxis axis);
+    // Collective on the grid's pool. Call before constructing a layout for grid integration.
+    static SlabAxis select_axis(const ModulePW::PW_Basis_Big &grid, const UnitCell &cell);
 
-    // getter functions
-    std::shared_ptr<const LocalCellInfo> get_localcell_info() const { return localcell_info_; }
-    bool get_is_redivided() const { return is_redivided_; }
+    const ModuleBase::Vector3<int> &block_start() const { return block_start_; }
+    const ModuleBase::Vector3<int> &block_count() const { return block_count_; }
+    bool needs_transfer() const { return !gint_.counts.empty(); }
+
+    // In the FFT layout return the original field, leaving scratch unused.
+    const double *from_fft(const double *field, std::vector<double> &scratch) const;
+    template <typename T>
+    void copy_to_fft(const T *local, T *field) const;
+    int fft_size() const;
+    void add_to_fft(const double *contribution, double *field) const;
 
   private:
-    // if the grid is redivided, is_redeiided_ is true
-    bool is_redivided_;
+    // A peer owns equally spaced contiguous runs within the local field.
+    struct Rows
+    {
+        int first;
+        int number;
+        int stride;
+        int length;
+    };
+    struct Layout
+    {
+        void append(Rows runs);
+        std::vector<Rows> rows;
+        std::vector<int> counts;
+        std::vector<int> offsets;
+        int size = 0;
+        bool contiguous = true;
+    };
 
-    // the old start index of the local cell
-    int startidx_bx_old_;
-    int startidx_by_old_;
-    int startidx_bz_old_;
-
-    // the old number of big grids in the local cell
-    int nbx_old_;
-    int nby_old_;
-    int nbz_old_;
-
-    // the new start index of the local cell
-    int startidx_bx_new_;
-    int startidx_by_new_;
-    int startidx_bz_new_;
-
-    // the new number of big grids in the local cell
-    int nbx_new_;
-    int nby_new_;
-    int nbz_new_;
-
-    // the unitcell info
-    std::shared_ptr<const UnitCellInfo> unitcell_info_;
-
-    // the localcell info
-    std::shared_ptr<const LocalCellInfo> localcell_info_;
+    template <typename T>
+    void transfer(
+        const T *src,
+        const Layout &send,
+        T *dst,
+        const Layout &recv,
+        bool add) const;
+    const ModulePW::PW_Basis_Big &grid_;
+    ModuleBase::Vector3<int> block_start_;
+    ModuleBase::Vector3<int> block_count_;
+    Layout fft_;
+    Layout gint_;
 };
 
 } // namespace ModuleGint
-
-#endif // ABACUS_SOURCE_HAMILT_MODULE_GINT_DIVIDE_INFO_H
+#endif

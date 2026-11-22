@@ -450,10 +450,8 @@ void ModuleESolver::ESolver_LR<T, TR>::initialize_from_unitcell_(UnitCell &ucell
         PARAM.globalv.search_pbc, this->ofs_running_, this->gd(), *this->ucell_, search_radius,
         this->inp_->test_atom_input);
     gint_info_.reset(new ModuleGint::GintInfo(
-        this->pw_big->nbx, this->pw_big->nby, this->pw_big->nbz, this->pw_rho->nx, this->pw_rho->ny, this->pw_rho->nz,
-        0, 0, this->pw_big->nbzp_start, this->pw_big->nbx, this->pw_big->nby, this->pw_big->nbzp, orb.Phi, ucell,
-        this->gd(), this->inp_->nspin, PARAM.globalv.gamma_only_local, PARAM.globalv.domag, this->inp_->device == "gpu",
-        this->inp_->nstream));
+        *this->pw_big, this->ofs_running_, orb.Phi, ucell, this->gd(), this->inp_->nspin,
+        PARAM.globalv.gamma_only_local, PARAM.globalv.domag, this->inp_->device == "gpu", this->inp_->nstream));
     ModuleGint::Gint::set_gint_info(gint_info_.get());
     // if EXX from scratch, init 2-center integral and calculate Cs, Vs
     // when:

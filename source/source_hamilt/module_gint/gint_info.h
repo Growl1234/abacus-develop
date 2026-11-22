@@ -11,6 +11,7 @@
 #include "source_cell/unitcell.h"
 #include "source_hamilt/module_hcontainer/hcontainer.h"
 #include "unitcell_info.h"
+#include <iosfwd>
 #include <memory>
 #include <vector>
 
@@ -27,18 +28,8 @@ class GintInfo
   public:
     // constructor
     GintInfo(
-        int nbx,
-        int nby,
-        int nbz,
-        int nmx,
-        int nmy,
-        int nmz,
-        int startidx_bx,
-        int startidx_by,
-        int startidx_bz,
-        int nbx_local,
-        int nby_local,
-        int nbz_local,
+        const ModulePW::PW_Basis_Big &grid,
+        std::ostream &log,
         const Numerical_Orbital *Phi,
         const UnitCell &ucell,
         Grid_Driver &gd,
@@ -79,6 +70,7 @@ class GintInfo
     GintPrecision get_exec_precision() const { return exec_precision_; }
     int get_nspin() const { return nspin_; }
     bool get_domag() const { return domag_; }
+    const DivideInfo &layout() const { return *divide_info_; }
     bool use_gpu() const { return use_gpu_; }
     void set_exec_precision(const GintPrecision precision) { exec_precision_ = precision; }
 

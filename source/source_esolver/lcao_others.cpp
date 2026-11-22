@@ -68,21 +68,18 @@ void ESolver_KS_LCAO<TK, TR>::others(BaseCell &basecell, const int istep)
         return;
     }
 
+    auto &log = GlobalV::ofs_running;
     // 1. prepare HS matrices, prepare grid integral
     // (1) Find adjacent atoms for each atom.
     double search_radius = atom_arrange::set_sr_NL(
-        GlobalV::ofs_running, this->inp_->out_level, orb_.get_rcutmax_Phi(), ucell.infoNL->get_rcutmax_Beta(),
-        gamma_only_local);
+        log, this->inp_->out_level, orb_.get_rcutmax_Phi(), ucell.infoNL->get_rcutmax_Beta(), gamma_only_local);
 
-    atom_arrange::search(
-        PARAM.globalv.search_pbc, GlobalV::ofs_running, this->gd, ucell, search_radius, this->inp_->test_atom_input);
+    atom_arrange::search(PARAM.globalv.search_pbc, log, this->gd, ucell, search_radius, this->inp_->test_atom_input);
 
     // (3) Periodic condition search for each grid.
     gint_info_.reset(new ModuleGint::GintInfo(
-        this->pw_big->nbx, this->pw_big->nby, this->pw_big->nbz, this->pw_rho->nx, this->pw_rho->ny, this->pw_rho->nz,
-        0, 0, this->pw_big->nbzp_start, this->pw_big->nbx, this->pw_big->nby, this->pw_big->nbzp, orb_.Phi, ucell,
-        this->gd, this->inp_->nspin, gamma_only_local, PARAM.globalv.domag, this->inp_->device == "gpu",
-        this->inp_->nstream));
+        *this->pw_big, log, orb_.Phi, ucell, this->gd, this->inp_->nspin, gamma_only_local, PARAM.globalv.domag,
+        this->inp_->device == "gpu", this->inp_->nstream));
     ModuleGint::Gint::set_gint_info(gint_info_.get());
 
     // (2)For each atom, calculate the adjacent atoms in different cells

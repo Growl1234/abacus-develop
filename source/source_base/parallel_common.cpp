@@ -10,6 +10,18 @@ namespace Parallel_Common
 {
 
 #ifdef __MPI
+template <typename T>
+void alltoallv(const T* src, const int* send_counts, const int* send_offsets,
+               T* dst, const int* recv_counts, const int* recv_offsets, MPI_Comm comm)
+{
+    const auto type = Parallel_Reduce::MPI_Type<T>::value;
+    MPI_Alltoallv(src, send_counts, send_offsets, type, dst, recv_counts, recv_offsets, type, comm);
+}
+
+template void alltoallv(const double*, const int*, const int*, double*, const int*, const int*, MPI_Comm);
+template void alltoallv(const std::complex<double>*, const int*, const int*,
+                        std::complex<double>*, const int*, const int*, MPI_Comm);
+
 /// Broadcast a trivially-copyable buffer of type T on MPI_COMM_WORLD from
 /// rank 0. This is the single implementation behind all bcast_* wrappers.
 template <typename T>

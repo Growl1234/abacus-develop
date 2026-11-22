@@ -2,26 +2,18 @@
 #include "gint_type.h"
 #include "source_base/memory_recorder.h"
 #include "source_base/timer.h"
+#include "source_basis/module_pw/pw_basis_big.h"
 #include "source_cell/cal_nelec_nband.h"
 #include <cmath>
 #include <map>
+#include <ostream>
 
 namespace ModuleGint
 {
 
 GintInfo::GintInfo(
-    int nbx,
-    int nby,
-    int nbz,
-    int nmx,
-    int nmy,
-    int nmz,
-    int startidx_bx,
-    int startidx_by,
-    int startidx_bz,
-    int nbx_local,
-    int nby_local,
-    int nbz_local,
+    const ModulePW::PW_Basis_Big &grid,
+    std::ostream &log,
     const Numerical_Orbital *Phi,
     const UnitCell &ucell,
     Grid_Driver &gd,
@@ -34,17 +26,19 @@ GintInfo::GintInfo(
 {
     // initialize the unitcell information
     unitcell_info_ = std::make_shared<UnitCellInfo>(
-        ucell_->a1 * ucell_->lat0, ucell_->a2 * ucell_->lat0, ucell_->a3 * ucell_->lat0, nbx, nby, nbz, nmx, nmy, nmz);
+        ucell_->a1 * ucell_->lat0, ucell_->a2 * ucell_->lat0, ucell_->a3 * ucell_->lat0, grid.nbx, grid.nby, grid.nbz,
+        grid.nx, grid.ny, grid.nz);
 
     biggrid_info_ = unitcell_info_->get_bgrid_info();
     meshgrid_info_ = biggrid_info_->get_mgrid_info();
 
-    // initialize the divide information
-    divide_info_ = std::make_shared<DivideInfo>(
-        startidx_bx, startidx_by, startidx_bz, nbx_local, nby_local, nbz_local, unitcell_info_, false);
-
-    // initialize the localcell information
-    localcell_info_ = divide_info_->get_localcell_info();
+    const auto axis = DivideInfo::select_axis(grid, ucell);
+    divide_info_ = std::make_shared<DivideInfo>(grid, axis);
+    log << " Gint slab axis = " << "abc"[static_cast<int>(axis)] << '\n';
+    const auto &start = divide_info_->block_start();
+    const auto &count = divide_info_->block_count();
+    localcell_info_ =
+        std::make_shared<LocalCellInfo>(start.x, start.y, start.z, count.x, count.y, count.z, unitcell_info_);
 
     // initialize the biggrids
     BigGrid::init_localcell_info(localcell_info_);
@@ -70,7 +64,7 @@ GintInfo::GintInfo(
     if (use_gpu_)
     {
         streams_num_ = nstream; // the default value of num_stream is 4
-        const int batch_size = nbz_local;
+        const int batch_size = grid.nbzp;
         init_bgrid_batches_(batch_size);
         gpu_vars_ = std::make_shared<GintGpuVars>(biggrid_info_, ucell, Phi);
     }
