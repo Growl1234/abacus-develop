@@ -293,6 +293,8 @@ set(_abacus_feature_libs
     $<$<BOOL:${ENABLE_PEXSI}>:PEXSI::PEXSI>
     $<$<BOOL:${ENABLE_CNPY}>:cnpy>
     $<$<BOOL:${ENABLE_CNPY}>:ZLIB::ZLIB>
+    $<$<BOOL:${ENABLE_LIBRI}>:LibRI::LibRI>
+    $<$<BOOL:${ENABLE_LIBRI}>:LibComm::LibComm>
     $<$<BOOL:${ENABLE_LIBRI}>:cereal::cereal>
     $<$<BOOL:${ENABLE_LIBXC}>:Libxc::xc>
     $<$<BOOL:${ENABLE_PLUMED}>:PLUMED::plumed>
