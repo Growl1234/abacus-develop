@@ -23,5 +23,14 @@ endif()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(LibRI DEFAULT_MSG LIBRI_DIR)
 
+if(LibRI_FOUND)
+  if(NOT TARGET LibRI::LibRI)
+    add_library(LibRI::LibRI UNKNOWN IMPORTED)
+    set_target_properties(
+      LibRI::LibRI
+      PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${LIBRI_DIR}/include")
+  endif()
+endif()
+
 # Copy the results to the output variables and target.
 mark_as_advanced(LIBRI_DIR)
