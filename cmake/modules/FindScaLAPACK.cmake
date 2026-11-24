@@ -24,12 +24,20 @@ find_package_handle_standard_args(ScaLAPACK REQUIRED_VARS ScaLAPACK_LIBRARY)
 
 # Copy the results to the output variables and target.
 if(ScaLAPACK_FOUND)
+  if(NOT TARGET LAPACK::LAPACK)
+    find_package(LAPACK REQUIRED)
+  endif()
+  if(NOT TARGET MPI::MPI_CXX)
+    find_package(MPI REQUIRED COMPONENTS CXX)
+  endif()
   set(ScaLAPACK_LIBRARIES ${ScaLAPACK_LIBRARY})
 
   if(NOT TARGET ScaLAPACK::ScaLAPACK)
     add_library(ScaLAPACK::ScaLAPACK UNKNOWN IMPORTED)
-    set_target_properties(ScaLAPACK::ScaLAPACK
-                          PROPERTIES IMPORTED_LOCATION "${ScaLAPACK_LIBRARY}")
+    set_target_properties(
+      ScaLAPACK::ScaLAPACK
+      PROPERTIES IMPORTED_LOCATION "${ScaLAPACK_LIBRARY}"
+                 INTERFACE_LINK_LIBRARIES "LAPACK::LAPACK;MPI::MPI_CXX")
   endif()
 endif()
 

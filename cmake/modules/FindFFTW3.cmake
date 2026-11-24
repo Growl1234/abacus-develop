@@ -50,6 +50,9 @@ find_package_handle_standard_args(FFTW3 DEFAULT_MSG ${_fftw3_required_vars})
 # Copy the results to the output variables and target.
 set(FFTW3_VERSION "")
 if(FFTW3_FOUND)
+  if(ENABLE_OPENMP AND NOT TARGET OpenMP::OpenMP_CXX)
+    find_package(OpenMP REQUIRED COMPONENTS CXX)
+  endif()
   set(FFTW3_LIBRARIES ${FFTW3_LIBRARY})
   if(ENABLE_OPENMP)
     list(APPEND FFTW3_LIBRARIES ${FFTW3_OMP_LIBRARY})
@@ -77,6 +80,9 @@ if(FFTW3_FOUND)
       PROPERTIES IMPORTED_LINK_INTERFACE_LANGUAGES "C"
                  IMPORTED_LOCATION "${FFTW3_LIBRARY}"
                  INTERFACE_INCLUDE_DIRECTORIES "${FFTW3_INCLUDE_DIRS}")
+    if(NOT MSVC)
+      set_property(TARGET FFTW3::FFTW3 PROPERTY INTERFACE_LINK_LIBRARIES m)
+    endif()
   endif()
   if(ENABLE_FLOAT_FFTW AND NOT TARGET FFTW3::FFTW3_FLOAT)
     add_library(FFTW3::FFTW3_FLOAT UNKNOWN IMPORTED)
@@ -85,6 +91,10 @@ if(FFTW3_FOUND)
       PROPERTIES IMPORTED_LINK_INTERFACE_LANGUAGES "C"
                  IMPORTED_LOCATION "${FFTW3_FLOAT_LIBRARY}"
                  INTERFACE_INCLUDE_DIRECTORIES "${FFTW3_INCLUDE_DIRS}")
+    if(NOT MSVC)
+      set_property(TARGET FFTW3::FFTW3_FLOAT PROPERTY INTERFACE_LINK_LIBRARIES
+                                                      m)
+    endif()
   endif()
   if(ENABLE_OPENMP)
     if(NOT TARGET FFTW3::FFTW3_OMP)
@@ -93,7 +103,8 @@ if(FFTW3_FOUND)
         FFTW3::FFTW3_OMP
         PROPERTIES IMPORTED_LINK_INTERFACE_LANGUAGES "C"
                    IMPORTED_LOCATION "${FFTW3_OMP_LIBRARY}"
-                   INTERFACE_INCLUDE_DIRECTORIES "${FFTW3_INCLUDE_DIRS}")
+                   INTERFACE_INCLUDE_DIRECTORIES "${FFTW3_INCLUDE_DIRS}"
+                   INTERFACE_LINK_LIBRARIES "FFTW3::FFTW3;OpenMP::OpenMP_CXX")
     endif()
   endif()
 endif()

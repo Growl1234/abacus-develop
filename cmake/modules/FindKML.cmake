@@ -7,7 +7,7 @@
 # Imported targets:
 #   KML::BLAS         KML BLAS
 #   KML::LAPACK       KML LAPACK, with KML::BLAS transitively linked
-#   KML::ScaLAPACK    KML ScaLAPACK, with KML::LAPACK transitively linked
+#   KML::ScaLAPACK    KML ScaLAPACK, with KML::LAPACK and MPI transitively linked
 #   KML::FFTW3        KML FFTW-compatible double-precision FFT interface
 #   KML::FFTW3_FLOAT  KML FFTW-compatible single-precision FFT interface
 #
@@ -261,13 +261,20 @@ if(KML_FOUND)
                  INTERFACE_LINK_LIBRARIES KML::BLAS)
   endif()
 
-  if(KML_ScaLAPACK_FOUND AND NOT TARGET KML::ScaLAPACK)
+  # Do not require MPI in serial builds just because KML also ships ScaLAPACK.
+  if(KML_ScaLAPACK_FOUND
+     AND NOT TARGET KML::ScaLAPACK
+     AND ("ScaLAPACK" IN_LIST KML_FIND_COMPONENTS OR "SCALAPACK" IN_LIST
+                                                     KML_FIND_COMPONENTS))
+    if(NOT TARGET MPI::MPI_CXX)
+      find_package(MPI REQUIRED COMPONENTS CXX)
+    endif()
     add_library(KML::ScaLAPACK UNKNOWN IMPORTED)
     set_target_properties(
       KML::ScaLAPACK
       PROPERTIES IMPORTED_LOCATION "${KML_SCALAPACK_LIBRARY}"
                  INTERFACE_INCLUDE_DIRECTORIES "${KML_INCLUDE_DIR}"
-                 INTERFACE_LINK_LIBRARIES KML::LAPACK)
+                 INTERFACE_LINK_LIBRARIES "KML::LAPACK;MPI::MPI_CXX")
   endif()
 
   if(KML_FFTW3_FOUND AND NOT TARGET KML::FFTW3)
