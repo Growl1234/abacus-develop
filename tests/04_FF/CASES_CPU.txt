@@ -18,7 +18,8 @@
 18_LJ_single_rule2
 19_LJ_RE_stop
 20_LJ_dry_run
-#50_DP_Al
+50_DP_Al_torch
+#51_DP_Al_tensorflow
 101_NEP_HfO2
 102_SNAP_base
 103_SNAP_pbc
