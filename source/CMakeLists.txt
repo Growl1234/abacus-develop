@@ -72,7 +72,7 @@ set(_abacus_feature_definitions
 if(ABACUS_COMMIT_INFO_INCLUDE_DIR)
   list(APPEND _abacus_feature_definitions COMMIT_INFO)
 endif()
-if(DEFINED DeePMD_DIR)
+if(ENABLE_DEEPMD)
   list(APPEND _abacus_feature_definitions __DPMD HIGH_PREC)
   if(DEFINED DeePMD_INPUT_NLIST_COMM_ARGS AND DeePMD_INPUT_NLIST_COMM_ARGS
                                               GREATER 0)
@@ -86,7 +86,7 @@ if(DEFINED DeePMD_DIR)
     list(APPEND _abacus_feature_definitions __DPMDC)
   endif()
 endif()
-if(DEFINED NEP_DIR AND NEP_FOUND)
+if(ENABLE_NEP)
   list(APPEND _abacus_feature_definitions __NEP)
 endif()
 
@@ -300,12 +300,10 @@ set(_abacus_feature_libs
     $<$<BOOL:${ENABLE_LIBRI}>:cereal::cereal>
     $<$<BOOL:${ENABLE_LIBXC}>:Libxc::xc>
     $<$<BOOL:${ENABLE_PLUMED}>:PLUMED::plumed>
-    $<$<BOOL:${ENABLE_DEEPMD}>:DeePMD::deepmd>
+    $<$<BOOL:${ENABLE_DEEPMD}>:${ABACUS_DEEPMD_TARGET}>
     $<$<BOOL:${ENABLE_NEP}>:NEP::nep>
-    $<$<BOOL:${ENABLE_MLALGO}>:libnpy::npy>
-    $<$<BOOL:${_enable_torch}>:${TORCH_LIBRARIES}>)
+    $<$<BOOL:${ENABLE_MLALGO}>:libnpy::npy>)
 set(_abacus_feature_include_dirs)
-set(_abacus_feature_compile_options)
 
 if(ENABLE_ELPA)
   list(APPEND _abacus_feature_include_dirs ${ELPA_INCLUDE_DIR})
@@ -318,11 +316,6 @@ if(ENABLE_CNPY)
   if(cnpy_SOURCE_DIR)
     list(APPEND _abacus_feature_include_dirs ${cnpy_SOURCE_DIR})
   endif()
-endif()
-
-if(ENABLE_LIBRI)
-  list(APPEND _abacus_feature_include_dirs ${LIBRI_DIR}/include
-       ${LIBCOMM_DIR}/include)
 endif()
 
 if(ENABLE_DEEPMD AND DEEPMD_BACKEND STREQUAL "TensorFlow")
@@ -384,7 +377,7 @@ endif()
 
 target_link_libraries(abacus_feature_libs INTERFACE ${_abacus_feature_libs})
 
-if(DEFINED DeePMD_DIR
+if(ENABLE_DEEPMD
    AND UNIX
    AND NOT APPLE)
   target_link_options(abacus_feature_libs INTERFACE "LINKER:--no-as-needed")
@@ -392,18 +385,19 @@ endif()
 
 target_include_directories(abacus_compile_requirements
                            INTERFACE ${_abacus_feature_include_dirs})
-target_compile_options(abacus_compile_requirements
-                       INTERFACE ${_abacus_feature_compile_options})
 
 foreach(
   _abacus_feature_target IN
   ITEMS nlohmann_json::nlohmann_json
         cereal::cereal
+        LibRI::LibRI
+        LibComm::LibComm
+        libnpy::npy
+        torch
         ELPA::ELPA
         Libxc::xc
         dftd4::dftd4
-        DeePMD::deepmd_c
-        DeePMD::deepmd_cc
+        ${ABACUS_DEEPMD_TARGET}
         NEP::nep
         TensorFlow::tensorflow_cc
         ZLIB::ZLIB
@@ -832,7 +826,7 @@ endif()
 target_link_libraries(${ABACUS_BIN_NAME} PRIVATE abacus::link_libs)
 
 # Torch includes some LAPACK routines, but with floating-point exceptions.
-if(ENABLE_MLALGO OR DEFINED Torch_DIR)
+if(_enable_torch)
   target_link_libraries(${ABACUS_BIN_NAME} PRIVATE ${TORCH_LIBRARIES})
 endif()
 

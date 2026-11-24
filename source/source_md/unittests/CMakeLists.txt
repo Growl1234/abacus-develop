@@ -124,12 +124,8 @@ addtest(
           ${depend_files})
 
 set(_md_dp_test_libs parameter psi device)
-if(DEFINED DeePMD_DIR)
-  if(DeePMDC_FOUND)
-    list(APPEND _md_dp_test_libs DeePMD::deepmd_c)
-  else()
-    list(APPEND _md_dp_test_libs DeePMD::deepmd_cc)
-  endif()
+if(ENABLE_DEEPMD)
+  list(APPEND _md_dp_test_libs ${ABACUS_DEEPMD_TARGET})
 endif()
 
 addtest(
@@ -145,7 +141,7 @@ addtest(
   SOURCES test_dp_aparam.cpp ../module_dp/dp_aparam.cpp)
 
 set(_md_nep_test_libs parameter psi device)
-if(DEFINED NEP_DIR AND NEP_FOUND)
+if(ENABLE_NEP)
   list(APPEND _md_nep_test_libs NEP::nep)
 endif()
 

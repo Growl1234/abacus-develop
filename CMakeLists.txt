@@ -517,12 +517,16 @@ if(ENABLE_MLALGO)
 endif()
 
 if(ENABLE_DEEPMD)
-  set(DEEPMD_BACKEND "Torch" CACHE STRING "DeePMD backend")
+  set(DEEPMD_BACKEND
+      "Torch"
+      CACHE STRING "DeePMD backend")
   set_property(CACHE DEEPMD_BACKEND PROPERTY STRINGS Torch TensorFlow)
   if(DEEPMD_BACKEND STREQUAL "Torch")
     set(_enable_torch TRUE)
   elseif(DEEPMD_BACKEND STREQUAL "TensorFlow")
     find_package(TensorFlow REQUIRED)
+  else()
+    message(FATAL_ERROR "DEEPMD_BACKEND must be Torch or TensorFlow.")
   endif()
 endif()
 
@@ -536,7 +540,6 @@ if(_enable_torch)
   elseif(NOT Torch_VERSION VERSION_LESS "1.5.0")
     set_if_higher(CMAKE_CXX_STANDARD 14)
   endif()
-  set(ABACUS_TORCH_CXX_FLAGS "${TORCH_CXX_FLAGS}")
 endif()
 
 if(ENABLE_CNPY)
@@ -595,7 +598,7 @@ if(ENABLE_LIBXC)
 endif()
 
 if(ENABLE_DEEPMD)
-  find_package(DeePMD REQUIRED CONFIG)
+  find_package(DeePMD REQUIRED)
 endif()
 
 if(ENABLE_NEP)
