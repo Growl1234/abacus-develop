@@ -549,8 +549,6 @@ endif()
 if(ENABLE_LIBRI)
   set_if_higher(CMAKE_CXX_STANDARD 14)
   find_package(LibRI REQUIRED)
-  find_package(LibComm REQUIRED)
-  find_package(cereal REQUIRED CONFIG)
 endif()
 
 if(ENABLE_LIBXC)

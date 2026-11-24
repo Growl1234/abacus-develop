@@ -5,6 +5,9 @@
 #  LIBRI_FOUND - True if LibRI is found.
 #  LIBRI_DIR - Where to find LibRI files.
 
+find_package(cereal CONFIG REQUIRED)
+find_package(LibComm REQUIRED)
+
 find_path(
   LIBRI_DIR include/RI/version.h
   HINTS ${LIBRI_DIR}
@@ -26,6 +29,8 @@ find_package_handle_standard_args(LibRI DEFAULT_MSG LIBRI_DIR)
 if(LibRI_FOUND)
   if(NOT TARGET LibRI::LibRI)
     add_library(LibRI::LibRI INTERFACE IMPORTED)
+    target_link_libraries(LibRI::LibRI INTERFACE LibComm::LibComm
+                                                 cereal::cereal)
     set_target_properties(LibRI::LibRI PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
                                                   "${LIBRI_DIR}/include")
   endif()
