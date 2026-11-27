@@ -135,6 +135,12 @@ DFT-D4 must be built and installed with CMake, so that ABACUS can locate it thro
 
 To build ABACUS with DFT-D4 support, pass `-DENABLE_DFTD4=ON` to CMake.
 
+## Build with libvdwxc
+
+ABACUS can use [libvdwxc](https://gitlab.com/libvdwxc/libvdwxc) library to perform non-local vdW correction, including vdW-DF, vdW-DF2, vdW-DF-CX, and rVV10. Libvdwxc must be built and installed with CMake, so that ABACUS can locate it through the exported `libvdwxc-config.cmake` package.
+
+To build ABACUS with libvdwxc support, pass `-DENABLE_LIBVDWXC=ON` to CMake.
+
 ## Build with JSON support
 
 ABACUS uses [nlohmann-json](https://github.com/nlohmann/json) for optional JSON output. To build ABACUS with JSON support, pass `-DENABLE_JSON=ON` to CMake.

@@ -1,8 +1,11 @@
-#include "source_base/global_function.h"
-#include "source_base/tool_quit.h"
+#include "read_inp_sccs.h"
 #include "read_input.h"
 #include "read_input_tool.h"
-#include "read_inp_sccs.h"
+#include "source_base/global_function.h"
+#include "source_base/tool_quit.h"
+#include "source_hamilt/module_vdw/vdw_nonloc.h"
+
+#include <cmath>
 namespace ModuleIO
 {
 void ReadInput::item_model()
@@ -264,8 +267,8 @@ void ReadInput::item_model()
     // vdW Correction
     {
         Input_Item item("vdw_method");
-        item.domain.set_choices({"none", "d2", "d3_0", "d3_bj", "d4"});
-        item.annotation = "the method of calculating vdw (none ; d2 ; d3_0 ; d3_bj ; d4)";
+        item.domain.set_choices({"none", "d2", "d3_0", "d3_bj", "d4", "vdw_df1", "vdw_df2", "vdw_dfcx", "rvv10"});
+        item.annotation = "method of calculating vdw correction";
         item.category = "vdW correction";
         item.type = "String";
         item.description = R"(Specifies the method used for Van der Waals (VdW) correction. Available options are:
@@ -273,12 +276,62 @@ void ReadInput::item_model()
 * d3_0: Grimme's DFT-D3(0) dispersion correction method (zero-damping)
 * d3_bj: Grimme's DFTD3(BJ) dispersion correction method (BJ-damping)
 * d4: Grimme's DFT-D4 dispersion correction method using the external DFT-D4 library
+* vdw_df1, vdw_df2, vdw_dfcx: vdW-DF non-local dispersion correction methods (requires libvdwxc)
+* rvv10: rVV10 non-local dispersion correction methods (requires libvdwxc)
 * none: no vdW correction
 
 [NOTE] ABACUS automatically loads DFT-D3 parameters for supported functionals according to dft_functional setting. Individual user values overwrite the corresponding tabulated values. Setting all four of vdw_s6, vdw_s8, vdw_a1 and vdw_a2 defines a fully custom set and bypasses functional lookup.)";
         item.default_value = "none";
         item.unit = "";
         read_sync_string(input.vdw_method);
+        item.check_value = [](const Input_Item &, const Parameter &para)
+        {
+            const Input_para &in = para.input;
+            if (!vdw::is_nonloc(in.vdw_method))
+            {
+                return;
+            }
+#ifndef __LIBVDWXC
+            ModuleBase::WARNING_QUIT(
+                "vdw_method", "Nonlocal vdW correction requires ABACUS to be built with libvdwxc.");
+#endif
+            if ((in.calculation != "scf" && in.calculation != "relax" && in.calculation != "cell-relax") ||
+                in.esolver_type != "ksdft" || (in.basis_type != "pw" && in.basis_type != "lcao") ||
+                in.device != "cpu" || (in.nspin != 1 && in.nspin != 2))
+            {
+                ModuleBase::WARNING_QUIT(
+                    "vdw_method", "Nonlocal correlation supports CPU PW/LCAO Kohn-Sham scf, relax and cell-relax "
+                                  "with nspin=1 or 2");
+            }
+            if (in.vdw_method == "rvv10" &&
+                (!(in.rvv10_b > 0) || !(in.rvv10_c >= 0) || !std::isfinite(in.rvv10_b) || !std::isfinite(in.rvv10_c)))
+            {
+                ModuleBase::WARNING_QUIT(
+                    "rvv10", "rvv10_b must be finite and positive and rvv10_c must be finite and nonnegative");
+            }
+        };
+        this->add_item(item);
+    }
+    {
+        Input_Item item("rvv10_b");
+        item.annotation = "rVV10 short-range damping parameter";
+        item.category = "vdW correction";
+        item.type = "Real";
+        item.description = "Positive damping parameter b for rVV10. Choose the value for the intended XC functional.";
+        item.default_value = "6.3";
+        item.set_availability("vdw_method==rvv10");
+        read_sync_double(input.rvv10_b);
+        this->add_item(item);
+    }
+    {
+        Input_Item item("rvv10_c");
+        item.annotation = "rVV10 long-range parameter";
+        item.category = "vdW correction";
+        item.type = "Real";
+        item.description = "Nonnegative parameter C for the rVV10 kernel.";
+        item.default_value = "0.0093";
+        item.set_availability("vdw_method==rvv10");
+        read_sync_double(input.rvv10_c);
         this->add_item(item);
     }
     {
@@ -547,8 +600,10 @@ Namely, each line contains the element name and the corresponding parameter.)";
                 }
             }
         };
-        item.check_value = [](const Input_Item& item, const Parameter& para) {
-            if (std::stod(para.input.vdw_cutoff_radius) <= 0 && para.input.vdw_method != "none")
+        item.check_value = [](const Input_Item &item, const Parameter &para)
+        {
+            if (para.input.vdw_method != "none" && !vdw::is_nonloc(para.input.vdw_method) &&
+                std::stod(para.input.vdw_cutoff_radius) <= 0)
             {
                 ModuleBase::WARNING_QUIT("ReadInput", "vdw_cutoff_radius <= 0 is not allowd");
             }

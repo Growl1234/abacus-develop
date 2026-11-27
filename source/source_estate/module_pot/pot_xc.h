@@ -2,6 +2,9 @@
 #define POTXC_H
 
 #include "pot_base.h"
+#ifdef __LIBVDWXC
+#include "source_hamilt/module_vdw/vdw_nonloc.h"
+#endif
 
 namespace elecstate
 {
@@ -29,6 +32,9 @@ class PotXC : public PotBase
 
     void cal_v_eff(const Charge*const chg, const UnitCell*const ucell, ModuleBase::matrix& v_eff) override;
 
+#ifdef __LIBVDWXC
+    std::unique_ptr<vdw::Nonloc> nonloc;
+#endif
     ModuleBase::matrix* vofk = nullptr;
     double* etxc_ = nullptr;
     double* vtxc_ = nullptr;

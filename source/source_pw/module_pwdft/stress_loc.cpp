@@ -3,6 +3,7 @@
 #include "source_base/parallel_reduce.h"
 #include "source_base/timer.h"
 #include "source_base/tool_threading.h"
+#include "source_estate/elecstate.h"
 #include "source_io/module_parameter/parameter.h"
 #include "source_pw/module_pwdft/vl_pw.h"
 #include "stress_func.h"
@@ -306,8 +307,7 @@ void Stress_Func<FPTYPE, Device>::stress_pw_terms(
     ModuleBase::matrix &sigmaewa,
     ModuleBase::matrix &sigmacc,
     ModuleBase::matrix &sigmaxc,
-    const double &etxc,
-    const Charge *const chr,
+    const elecstate::ElecState &elec,
     ModulePW::PW_Basis *rhopw,
     const pseudopot_cell_vl &locpp,
     const Structure_Factor &sf,
@@ -319,6 +319,8 @@ void Stress_Func<FPTYPE, Device>::stress_pw_terms(
 {
     ModuleBase::TITLE("Stress", "stress_pw_terms");
 
+    const Charge *chr = elec.charge;
+
     // local pseudopotential stress:
     this->stress_loc(ucell, sigmadvl, rhopw, locpp.vloc, &sf, 0, chr);
 
@@ -329,15 +331,16 @@ void Stress_Func<FPTYPE, Device>::stress_pw_terms(
     this->stress_ewa(ucell, sigmaewa, rhopw, sf.strucFac, false);
 
     // stress due to core correlation.
-    this->stress_cc(sigmacc, rhopw, ucell, &sf, 0, locpp.numeric, chr, nspin, domag, domag_z, gga_grad, gamma_only_pw);
+    this->stress_cc(
+        sigmacc, rhopw, ucell, &sf, 0, locpp.numeric, chr, nspin, domag, domag_z, gga_grad, gamma_only_pw, elec.pot);
 
     // stress due to self-consistent charge.
     for (int i = 0; i < 3; i++)
     {
-        sigmaxc(i, i) = -etxc / ucell.omega;
+        sigmaxc(i, i) = -elec.f_en.etxc / ucell.omega;
     }
     // Exchange-correlation for PBE
-    this->stress_gga(ucell, sigmaxc, rhopw, chr, nspin, domag, domag_z, gga_grad);
+    this->stress_gga(ucell, sigmaxc, rhopw, chr, nspin, domag, domag_z, gga_grad, elec.pot);
 
     return;
 }

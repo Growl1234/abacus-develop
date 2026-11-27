@@ -69,6 +69,7 @@ set(_abacus_feature_definitions
     $<$<BOOL:${ENABLE_LIBXC_CUDA}>:ABACUS_LIBXC_CUDA>
     $<$<BOOL:${_libxc_requires_host_flag}>:ABACUS_LIBXC_REQUIRES_HOST_FLAG>
     $<$<BOOL:${ENABLE_DFTD4}>:__DFTD4>
+    $<$<BOOL:${ENABLE_LIBVDWXC}>:__LIBVDWXC>
     $<$<BOOL:${ENABLE_NEP}>:__NEP>
     $<$<BOOL:${MATH_INFO}>:GATHER_INFO>)
 
@@ -294,6 +295,7 @@ set(_abacus_feature_libs
     $<$<BOOL:${ENABLE_CNPY}>:CNPY::cnpy>
     $<$<BOOL:${ENABLE_LIBRI}>:LibRI::LibRI>
     $<$<BOOL:${ENABLE_LIBXC}>:Libxc::xc>
+    $<$<BOOL:${ENABLE_LIBVDWXC}>:libvdwxc::vdwxc>
     $<$<BOOL:${ENABLE_PLUMED}>:PLUMED::plumed>
     $<$<BOOL:${ENABLE_DEEPMD}>:${ABACUS_DEEPMD_TARGET}>
     $<$<BOOL:${ENABLE_NEP}>:nep::nep_cpu>
@@ -371,6 +373,7 @@ foreach(
         ELPA::ELPA
         PLUMED::plumed
         Libxc::xc
+        libvdwxc::vdwxc
         dftd4::dftd4
         ${ABACUS_DEEPMD_TARGET}
         nep::nep_cpu

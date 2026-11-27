@@ -16,7 +16,28 @@
 #include "source_pw/module_pwdft/kernels/stress_op.h"
 #include "source_pw/module_pwdft/vnl_pw.h"
 
+#include <vector>
+
 class pseudopot_cell_vl;
+namespace elecstate
+{
+class ElecState;
+class Potential;
+} // namespace elecstate
+
+namespace pw
+{
+// Spin-averaged XC potential in reciprocal space for both NLCC derivatives.
+std::vector<std::complex<double>> nlcc_potential(
+    const ModulePW::PW_Basis *rho_basis,
+    const Charge *chr,
+    const elecstate::Potential *pot,
+    UnitCell &cell,
+    int nspin,
+    bool domag,
+    bool domag_z,
+    int gga_grad);
+} // namespace pw
 
 //-------------------------------------------------------------------
 // mohan reconstruction note: 2021-02-07
@@ -136,7 +157,8 @@ class Stress_Func
         const bool domag,
         const bool domag_z,
         const int gga_grad,
-        const bool gamma_only_pw); // nonlinear core correction stress in PW or LCAO basis
+        const bool gamma_only_pw,
+        const elecstate::Potential *pot); // nonlinear core correction stress in PW or LCAO basis
 
     void deriv_drhoc(
         const bool &numeric,
@@ -159,7 +181,8 @@ class Stress_Func
         const int nspin,
         const bool domag,
         const bool domag_z,
-        const int gga_grad); // gga part in both PW and LCAO basis
+        const int gga_grad,
+        const elecstate::Potential *pot); // gga part in both PW and LCAO basis
     void stress_mgga(
         const UnitCell &ucell,
         ModuleBase::matrix &sigma,
@@ -185,8 +208,7 @@ class Stress_Func
         ModuleBase::matrix &sigmaewa,
         ModuleBase::matrix &sigmacc,
         ModuleBase::matrix &sigmaxc,
-        const double &etxc,
-        const Charge *const chr,
+        const elecstate::ElecState &elec,
         ModulePW::PW_Basis *rhopw,
         const pseudopot_cell_vl &locpp,
         const Structure_Factor &sf,

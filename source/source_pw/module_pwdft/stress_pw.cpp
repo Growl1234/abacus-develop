@@ -97,7 +97,7 @@ void Stress_PW<FPTYPE, Device>::cal_stress(
     {
         sigmaxc(i, i) = -(pelec->f_en.etxc - pelec->f_en.vtxc) / ucell.omega;
     }
-    this->stress_gga(ucell, sigmaxc, rho_basis, pelec->charge, nspin, domag, domag_z, gga_grad);
+    this->stress_gga(ucell, sigmaxc, rho_basis, pelec->charge, nspin, domag, domag_z, gga_grad, pelec->pot);
     if (XC_Functional::get_ked_flag())
     {
         this->stress_mgga(
@@ -111,7 +111,7 @@ void Stress_PW<FPTYPE, Device>::cal_stress(
     // nlcc
     this->stress_cc(
         sigmaxcc, rho_basis, ucell, p_sf, 1, locpp.numeric, pelec->charge, nspin, domag, domag_z, gga_grad,
-        gamma_only_pw);
+        gamma_only_pw, pelec->pot);
 
     // nonlocal
     this->stress_nl(sigmanl, this->pelec->wg, this->pelec->ekb, p_sf, p_kv, p_symm, wfc_basis, d_psi_in, nlpp, ucell);

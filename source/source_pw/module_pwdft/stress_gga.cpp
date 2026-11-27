@@ -1,8 +1,10 @@
 #include "source_base/parallel_reduce.h"
+#include "source_estate/module_pot/potential_new.h"
+#include "source_hamilt/module_vdw/vdw_nonloc.h"
 #include "source_hamilt/module_xc/xc_functional.h"
 #include "stress_func.h"
 
-// calculate the GGA stress correction in PW and LCAO
+// Add the explicit nonlocal and semilocal gradient terms to the XC stress in PW and LCAO.
 template <typename FPTYPE, typename Device>
 void Stress_Func<FPTYPE, Device>::stress_gga(
     const UnitCell &ucell,
@@ -12,11 +14,18 @@ void Stress_Func<FPTYPE, Device>::stress_gga(
     const int nspin,
     const bool domag,
     const bool domag_z,
-    const int gga_grad)
+    const int gga_grad,
+    const elecstate::Potential *pot)
 {
     ModuleBase::TITLE("Stress", "stress_gga");
     ModuleBase::timer::start("Stress", "stress_gga");
 
+#ifdef __LIBVDWXC
+    if (const auto *nonloc = pot ? pot->nonloc() : nullptr)
+    {
+        sigma += nonloc->stress();
+    }
+#endif
     int func_type = XC_Functional::get_func_type();
     if (func_type == 0 || func_type == 1)
     {

@@ -79,15 +79,15 @@ void OF_Stress_PW::cal_stress(const int nspin,
     {
         sigmaxc(i, i) = -(pelec->f_en.etxc - pelec->f_en.vtxc) / ucell.omega;
     }
-    stress_gga(ucell,sigmaxc, this->rhopw, pelec->charge,
-        nspin, domag, domag_z, gga_grad);
+    stress_gga(ucell, sigmaxc, this->rhopw, pelec->charge, nspin, domag, domag_z, gga_grad, pelec->pot);
 
     // local contribution
     stress_loc(ucell,sigmaloc, this->rhopw, locpp.vloc, p_sf, true, pelec->charge);
 
     // nlcc
-    stress_cc(sigmaxcc, this->rhopw, ucell, p_sf, true, locpp.numeric, pelec->charge,
-        nspin, domag, domag_z, gga_grad, gamma_only_pw);
+    stress_cc(
+        sigmaxcc, this->rhopw, ucell, p_sf, true, locpp.numeric, pelec->charge, nspin, domag, domag_z, gga_grad,
+        gamma_only_pw, pelec->pot);
 
     // vdW term prepared before SCF for this ionic configuration.
     if (vdw_result != nullptr)

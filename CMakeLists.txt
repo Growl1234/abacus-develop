@@ -52,6 +52,7 @@ option(ENABLE_FLOAT_FFTW "Enable using single-precision FFTW library." OFF)
 
 option(ENABLE_LIBXC "Enable using the LibXC package" OFF)
 option(ENABLE_DFTD4 "Enable DFT-D4 dispersion correction" OFF)
+option(ENABLE_LIBVDWXC "Enable nonlocal correlation with libvdwxc" OFF)
 option(ENABLE_PLUMED "Enable using the PLUMED enhanced-sampling library" OFF)
 option(ENABLE_JSON "Enable JSON output" OFF)
 option(ENABLE_CNPY "Enable cnpy usage" OFF)
@@ -349,6 +350,11 @@ if(NOT USE_KML
    AND NOT MKL_FOUND
    AND NOT USE_SW)
   find_package(FFTW3 REQUIRED)
+endif()
+
+if(ENABLE_LIBVDWXC)
+  enable_language(C)
+  find_package(libvdwxc CONFIG REQUIRED)
 endif()
 
 if(ENABLE_DFTD4)

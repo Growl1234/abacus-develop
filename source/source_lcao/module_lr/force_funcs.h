@@ -52,8 +52,9 @@ public:
         // domag/domag_z/gga_grad only matter for the noncollinear (nspin=4) case, which the
         // throw-guard above already excludes, so they are passed as fixed, inert defaults
         // here instead of reading the corresponding global flags.
-        f_pw.cal_force_cc(fcc, &rhopw, &chr, locpp.numeric, ucell_noconst,
-            nspin, /*domag=*/false, /*domag_z=*/false, /*gga_grad=*/0);
+        f_pw.cal_force_cc(
+            fcc, &rhopw, &chr, nullptr, locpp.numeric, ucell_noconst, nspin, /*domag=*/false, /*domag_z=*/false,
+            /*gga_grad=*/0);
         //--------------------------------------------------------
         // force due to self-consistent charge (invalid in from-scratch LR case)
         //--------------------------------------------------------

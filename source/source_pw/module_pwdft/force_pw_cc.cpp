@@ -1,34 +1,19 @@
 #include "force_pw.h"
-#include "source_base/parallel_reduce.h"
-#include "stress_func.h"
-// new
-#include "source_base/complexmatrix.h"
+#include "source_base/constants.h"
 #include "source_base/libm/libm.h"
 #include "source_base/math_integral.h"
-#include "source_base/mathzone.h"
+#include "source_base/parallel_reduce.h"
 #include "source_base/timer.h"
-#include "source_base/tool_threading.h"
-#include "source_cell/cal_ux.h"
-#include "source_estate/module_pot/efield.h"
-#include "source_estate/module_pot/gatefield.h"
-#include "source_hamilt/module_ewald/h_ewald_pw.h"
-#include "source_hamilt/module_surchem/surchem.h"
-#include "source_hamilt/module_vdw/vdw.h"
-#include "source_hamilt/module_xc/xc_functional.h"
+#include "stress_func.h"
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
-#ifdef __LIBXC
-#include "source_hamilt/module_xc/libxc_abacus.h"
-#endif
+#include <vector>
 
 template <typename FPTYPE, typename Device>
 void Forces<FPTYPE, Device>::cal_force_cc(
     ModuleBase::matrix &forcecc,
     const ModulePW::PW_Basis *const rho_basis,
     const Charge *const chr,
+    const elecstate::Potential *pot,
     const bool *numeric,
     UnitCell &ucell_in,
     const int nspin,
@@ -37,7 +22,6 @@ void Forces<FPTYPE, Device>::cal_force_cc(
     const int gga_grad)
 {
     ModuleBase::TITLE("Forces", "cal_force_cc");
-    // recalculate the exchange-correlation potential.
     ModuleBase::timer::start("Forces", "cal_force_cc");
 
     int total_works = 0;
@@ -55,67 +39,7 @@ void Forces<FPTYPE, Device>::cal_force_cc(
         return;
     }
 
-    ModuleBase::matrix v(nspin, rho_basis->nrxx);
-
-    const double hybrid_alpha = XC_Functional::get_hybrid_alpha();
-#ifdef __EXX
-    const double hse_omega = XC_Functional::get_hse_omega();
-#else
-    const double hse_omega = 0.0;
-#endif
-    if (XC_Functional::get_ked_flag())
-    {
-#ifdef __LIBXC
-        const std::tuple<double, double, ModuleBase::matrix, ModuleBase::matrix> etxc_vtxc_v =
-            XC_Functional_Libxc::v_xc_meta(
-                XC_Functional::get_func_id(), rho_basis->nrxx, ucell_in.omega, ucell_in.tpiba, chr, nspin, hybrid_alpha,
-                hse_omega);
-
-        // etxc = std::get<0>(etxc_vtxc_v);
-        // vtxc = std::get<1>(etxc_vtxc_v);
-        v = std::get<2>(etxc_vtxc_v);
-#else
-        ModuleBase::WARNING_QUIT("cal_force_cc", "to use mGGA, compile with LIBXC");
-#endif
-    }
-    else
-    {
-        unitcell::cal_ux(ucell_in, nspin);
-        const std::tuple<double, double, ModuleBase::matrix> etxc_vtxc_v = XC_Functional::v_xc(
-            rho_basis->nrxx, chr, &ucell_in, nspin, domag, domag_z, gga_grad, hybrid_alpha, hse_omega);
-
-        // etxc = std::get<0>(etxc_vtxc_v);
-        // vtxc = std::get<1>(etxc_vtxc_v);
-        v = std::get<2>(etxc_vtxc_v);
-    }
-
-    const ModuleBase::matrix vxc = v;
-    std::complex<double> *psiv = new std::complex<double>[rho_basis->nmaxgr];
-    if (nspin == 1 || nspin == 4)
-    {
-#ifdef _OPENMP
-#pragma omp parallel for schedule(static, 1024)
-#endif
-        for (int ir = 0; ir < rho_basis->nrxx; ir++)
-        {
-            psiv[ir] = std::complex<double>(vxc(0, ir), 0.0);
-        }
-    }
-    else
-    {
-#ifdef _OPENMP
-#pragma omp parallel for schedule(static, 1024)
-#endif
-        for (int ir = 0; ir < rho_basis->nrxx; ir++)
-        {
-            psiv[ir] = 0.5 * (vxc(0, ir) + vxc(1, ir));
-        }
-    }
-
-    // to G space
-    rho_basis->real2recip(psiv, psiv);
-
-    // psiv contains now Vxc(G)
+    const auto psiv = pw::nlcc_potential(rho_basis, chr, pot, ucell_in, nspin, domag, domag_z, gga_grad);
     double *rhocg = new double[rho_basis->ngg];
     ModuleBase::GlobalFunc::ZEROS(rhocg, rho_basis->ngg);
 
@@ -150,12 +74,12 @@ void Forces<FPTYPE, Device>::cal_force_cc(
         resmem_var_op()(gv_d, rho_basis->npw * 3);
         resmem_var_op()(tau_d, this->nat * 3);
         resmem_var_op()(rhocgigg_vec_d, rho_basis->npw);
-        resmem_complex_op()(psiv_d, rho_basis->nmaxgr);
+        resmem_complex_op()(psiv_d, rho_basis->npw);
         resmem_var_op()(force_d, 3 * this->nat);
 
         syncmem_var_h2d_op()(gv_d, gv_h.data(), rho_basis->npw * 3);
         syncmem_var_h2d_op()(tau_d, tau_h.data(), this->nat * 3);
-        syncmem_complex_h2d_op()(psiv_d, psiv, rho_basis->nmaxgr);
+        syncmem_complex_h2d_op()(psiv_d, psiv.data(), rho_basis->npw);
         syncmem_var_h2d_op()(force_d, forcecc.c, 3 * this->nat);
     }
 
@@ -243,7 +167,6 @@ void Forces<FPTYPE, Device>::cal_force_cc(
     }
     delete[] rhocg;
 
-    delete[] psiv;                                                    // mohan fix bug 2012-03-22
     Parallel_Reduce::reduce_pool(forcecc.c, forcecc.nr * forcecc.nc); // qianrui fix a bug for kpar > 1
     ModuleBase::timer::end("Forces", "cal_force_cc");
     return;

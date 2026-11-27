@@ -12,6 +12,10 @@
 #include <vector>
 
 struct Input_para;
+namespace vdw
+{
+class Nonloc;
+}
 
 namespace elecstate
 {
@@ -102,6 +106,9 @@ class Potential : public PotBase
     void sum_sol_energy(double& electrostatic, double& non_electrostatic) const;
     void sum_sol_force(const UnitCell& cell, ModuleBase::matrix& force) const;
     const std::vector<double>* find_sol_pot() const;
+#ifdef __LIBVDWXC
+    vdw::Nonloc *nonloc() const;
+#endif
     /// Implicit-solvent fields of the registered components, for out_sol.
     std::vector<SolventGridField> sol_out_fields() const;
 

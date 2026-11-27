@@ -63,6 +63,12 @@ void PotXC::cal_v_eff(const Charge*const chg, const UnitCell*const ucell, Module
         *(this->vtxc_) = std::get<1>(etxc_vtxc_v);
         v_eff += std::get<2>(etxc_vtxc_v);
     }
+#ifdef __LIBVDWXC
+    if (nonloc)
+    {
+        nonloc->add_xc(chg->rho, chg->rho_core, *etxc_, *vtxc_, v_eff);
+    }
+#endif
     ModuleBase::timer::end("PotXC", "cal_veff");
 }
 

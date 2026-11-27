@@ -167,19 +167,17 @@ class Force_Stress_LCAO
     // Local pseudopotential, Ewald, core-correction and self-consistent-field
     // force contributions, computed with the plane-wave Forces driver. Kept as
     // a member because it needs friend access to Forces::cal_force_*.
-    void calForcePwPart(UnitCell& ucell,
-                        ModuleBase::matrix& fvl_dvl,
-                        ModuleBase::matrix& fewalds,
-                        ModuleBase::matrix& fcc,
-                        ModuleBase::matrix& fscc,
-                        const double& etxc,
-                        const ModuleBase::matrix& vnew,
-                        const bool vnew_exist,
-                        const Charge* const chr,
-                        ModulePW::PW_Basis* rhopw,
-                        const pseudopot_cell_vl& locpp,
-                        const Structure_Factor& sf,
-                        const FSCalcConfig& cfg);
+    void calForcePwPart(
+        UnitCell &ucell,
+        ModuleBase::matrix &fvl_dvl,
+        ModuleBase::matrix &fewalds,
+        ModuleBase::matrix &fcc,
+        ModuleBase::matrix &fscc,
+        const elecstate::ElecState &elec,
+        ModulePW::PW_Basis *rhopw,
+        const pseudopot_cell_vl &locpp,
+        const Structure_Factor &sf,
+        const FSCalcConfig &cfg);
 
     static double force_invalid_threshold_ev;
 };

@@ -2,14 +2,74 @@
 #include "source_base/parallel_reduce.h"
 #include "source_base/timer.h"
 #include "source_cell/cal_ux.h"
+#include "source_estate/module_pot/potential_new.h"
+#include "source_hamilt/module_vdw/vdw_nonloc.h"
 #include "source_hamilt/module_xc/xc_functional.h"
 #include "stress_func.h"
+
+#include <tuple>
 
 #ifdef __LIBXC
 #include "source_hamilt/module_xc/libxc_abacus.h"
 #endif
 
-// NLCC term, need to be tested
+std::vector<std::complex<double>> pw::nlcc_potential(
+    const ModulePW::PW_Basis *rho_basis,
+    const Charge *chr,
+    const elecstate::Potential *pot,
+    UnitCell &cell,
+    int nspin,
+    bool domag,
+    bool domag_z,
+    int gga_grad)
+{
+    ModuleBase::matrix vxc;
+
+    const double hybrid_alpha = XC_Functional::get_hybrid_alpha();
+#ifdef __EXX
+    const double hse_omega = XC_Functional::get_hse_omega();
+#else
+    const double hse_omega = 0.0;
+#endif
+    if (XC_Functional::get_ked_flag())
+    {
+#ifdef __LIBXC
+        std::tie(std::ignore, std::ignore, vxc, std::ignore) = XC_Functional_Libxc::v_xc_meta(
+            XC_Functional::get_func_id(), rho_basis->nrxx, cell.omega, cell.tpiba, chr, nspin, hybrid_alpha, hse_omega);
+#else
+        ModuleBase::WARNING_QUIT("pw::nlcc_potential", "to use mGGA, compile with LIBXC");
+#endif
+    }
+    else
+    {
+        unitcell::cal_ux(cell, nspin);
+        std::tie(std::ignore, std::ignore, vxc) =
+            XC_Functional::v_xc(rho_basis->nrxx, chr, &cell, nspin, domag, domag_z, gga_grad, hybrid_alpha, hse_omega);
+    }
+
+    // An unpolarized core contributes equally to both collinear spin channels.
+    double *vcore = vxc.c;
+    if (nspin == 2)
+    {
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static, 1024)
+#endif
+        for (int ir = 0; ir < rho_basis->nrxx; ++ir)
+        {
+            vcore[ir] = 0.5 * (vxc(0, ir) + vxc(1, ir));
+        }
+    }
+#ifdef __LIBVDWXC
+    if (const auto *nonloc = pot ? pot->nonloc() : nullptr)
+    {
+        nonloc->add_core_potential(vcore);
+    }
+#endif
+    std::vector<std::complex<double>> psiv(rho_basis->npw);
+    rho_basis->real2recip(vcore, psiv.data());
+    return psiv;
+}
+
 template <typename FPTYPE, typename Device>
 void Stress_Func<FPTYPE, Device>::stress_cc(
     ModuleBase::matrix &sigma,
@@ -23,7 +83,8 @@ void Stress_Func<FPTYPE, Device>::stress_cc(
     const bool domag,
     const bool domag_z,
     const int gga_grad,
-    const bool gamma_only_pw)
+    const bool gamma_only_pw,
+    const elecstate::Potential *pot)
 {
     ModuleBase::TITLE("Stress", "stress_cc");
     ModuleBase::timer::start("Stress", "stress_cc");
@@ -53,67 +114,7 @@ void Stress_Func<FPTYPE, Device>::stress_cc(
         return;
     }
 
-    // recalculate the exchange-correlation potential
-    ModuleBase::matrix vxc;
-    const double hybrid_alpha = XC_Functional::get_hybrid_alpha();
-#ifdef __EXX
-    const double hse_omega = XC_Functional::get_hse_omega();
-#else
-    const double hse_omega = 0.0;
-#endif
-    if (XC_Functional::get_ked_flag())
-    {
-#ifdef __LIBXC
-        const std::tuple<double, double, ModuleBase::matrix, ModuleBase::matrix> etxc_vtxc_v =
-            XC_Functional_Libxc::v_xc_meta(
-                XC_Functional::get_func_id(), rho_basis->nrxx, ucell.omega, ucell.tpiba, chr, nspin, hybrid_alpha,
-                hse_omega);
-
-        // etxc = std::get<0>(etxc_vtxc_v);
-        // vtxc = std::get<1>(etxc_vtxc_v);
-        vxc = std::get<2>(etxc_vtxc_v);
-#else
-        ModuleBase::WARNING_QUIT("stress_cc", "to use mGGA, compile with LIBXC");
-#endif
-    }
-    else
-    {
-        unitcell::cal_ux(ucell, nspin);
-        const std::tuple<double, double, ModuleBase::matrix> etxc_vtxc_v =
-            XC_Functional::v_xc(rho_basis->nrxx, chr, &ucell, nspin, domag, domag_z, gga_grad, hybrid_alpha, hse_omega);
-        // etxc = std::get<0>(etxc_vtxc_v); // may delete?
-        // vtxc = std::get<1>(etxc_vtxc_v); // may delete?
-        vxc = std::get<2>(etxc_vtxc_v);
-    }
-
-    std::complex<FPTYPE> *psic = new std::complex<FPTYPE>[rho_basis->nmaxgr];
-
-    if (nspin == 1 || nspin == 4)
-    {
-#ifdef _OPENMP
-#pragma omp parallel for schedule(static, 1024)
-#endif
-        for (int ir = 0; ir < rho_basis->nrxx; ir++)
-        {
-            // psic[ir] = vxc(0,ir);
-            psic[ir] = std::complex<FPTYPE>(vxc(0, ir), 0.0);
-        }
-    }
-    else
-    {
-#ifdef _OPENMP
-#pragma omp parallel for schedule(static, 1024)
-#endif
-        for (int ir = 0; ir < rho_basis->nrxx; ir++)
-        {
-            psic[ir] = 0.5 * (vxc(0, ir) + vxc(1, ir));
-        }
-    }
-
-    // to G space
-    rho_basis->real2recip(psic, psic);
-
-    // psic cantains now Vxc(G)
+    const auto psic = pw::nlcc_potential(rho_basis, chr, pot, ucell, nspin, domag, domag_z, gga_grad);
     rhocg = new FPTYPE[rho_basis->ngg];
 
     sigmadiag = 0.0;
@@ -202,7 +203,6 @@ void Stress_Func<FPTYPE, Device>::stress_cc(
     }
 
     delete[] rhocg;
-    delete[] psic;
 
     ModuleBase::timer::end("Stress", "stress_cc");
     return;

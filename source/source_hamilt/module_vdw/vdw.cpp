@@ -1,4 +1,5 @@
 #include "vdw.h"
+#include "vdw_nonloc.h"
 
 #include "source_base/tool_quit.h"
 #include "vdwd2.h"
@@ -94,14 +95,14 @@ std::unique_ptr<Vdw> make_vdw(const UnitCell &ucell, const Input_para &input, st
                                                         "Rebuild ABACUS with -DENABLE_DFTD4=ON.");
 #endif
     }
-    else if (input.vdw_method != "none")
+    else if (input.vdw_method != "none" && !is_nonloc(input.vdw_method))
     {
         ModuleBase::WARNING_QUIT(
             "ModuleHamiltGeneral::ModuleVDW::make_vdw",
             "Unrecognized Van der Waals correction method: " + input.vdw_method);
         return nullptr;
     }
-    return nullptr; // "none" method
+    return nullptr; // Nonlocal density functionals are evaluated by PotXC.
 }
 
 } // namespace vdw

@@ -281,4 +281,27 @@ void allgatherv_double(const double* send,
 #endif
 }
 
+void alltoallv_double(
+    const double *send,
+    const int *send_counts,
+    const int *send_displs,
+    double *recv,
+    const int *recv_counts,
+    const int *recv_displs,
+    const ParaWorld &world)
+{
+    if (!world.valid())
+    {
+        return;
+    }
+#ifdef __MPI
+    MPI_Alltoallv(send, send_counts, send_displs, MPI_DOUBLE, recv, recv_counts, recv_displs, MPI_DOUBLE, world.comm());
+#else
+    if (send_counts[0] > 0)
+    {
+        std::copy_n(send + send_displs[0], send_counts[0], recv + recv_displs[0]);
+    }
+#endif
+}
+
 } // namespace Parallel

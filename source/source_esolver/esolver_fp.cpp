@@ -10,6 +10,7 @@
 #include "source_estate/param_update.h"
 #include "source_hamilt/module_ewald/h_ewald_pw.h"
 #include "source_hamilt/module_vdw/vdw.h"
+#include "source_hamilt/module_vdw/vdw_nonloc.h"
 #include "source_io/module_output/output_log.h"
 #include "source_io/module_output/print_info.h"
 #include "source_io/module_parameter/parameter.h"
@@ -73,6 +74,11 @@ void ESolver_FP::before_all_runners(BaseCell &basecell, const Input_para &inp)
         this->inp_->nbands, two_fermi, this->inp_->nelec_delta, this->inp_->smearing_method, this->inp_->ks_solver,
         this->inp_->bndpar, this->inp_->nelec, this->inp_->nupdown);
 
+    if (atoms_info.use_uspp && vdw::is_nonloc(inp.vdw_method) && (inp.cal_force || inp.cal_stress))
+    {
+        ModuleBase::WARNING_QUIT(
+            "vdw_method", "Nonlocal correlation forces and stress require norm-conserving pseudopotentials");
+    }
     elecstate::ParamUpdater::update_from_atoms_info(atoms_info);
 
     XC_Functional::set_xc_type(ucell.atoms[0].ncpp.xc_func);

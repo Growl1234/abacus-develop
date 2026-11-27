@@ -12,6 +12,7 @@
 #include "source_estate/module_charge/chg_routine.h"  // mohan add 20251018
 #include "source_estate/module_charge/chg_tools.h"    // module_charge::check_rho
 #include "source_estate/update_pot.h"                 // mohan add 20251016
+#include "source_hamilt/module_vdw/vdw_nonloc.h"
 #include "source_hamilt/module_xc/general_exx_info.h" // for init_general_exx_info
 #include "source_hamilt/module_xc/xc_functional.h"
 #include "source_hsolver/hsolver.h"
@@ -391,6 +392,15 @@ void ESolver_KS::iter_finish(
     conv_esolver = ctx.conv_esolver;
 
     // 2.3) Update potentials (should be done every SF iter)
+#ifdef __LIBVDWXC
+    if (this->inp_->cal_stress)
+    {
+        if (auto *nonloc = this->pelec->pot->nonloc())
+        {
+            nonloc->request_stress(conv_esolver || this->oscillate_esolver || iter == iter_limit);
+        }
+    }
+#endif
     elecstate::update_pot(ucell, this->pelec, this->chr, conv_esolver);
 
     // 3.1) calculate energies

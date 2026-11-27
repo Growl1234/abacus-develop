@@ -89,7 +89,7 @@ void Forces<FPTYPE, Device>::cal_force(
     }
 
     // non-linear core correction
-    Forces::cal_force_cc(forcecc, rho_basis, chr, locpp->numeric, ucell, nspin, domag, domag_z, gga_grad);
+    Forces::cal_force_cc(forcecc, rho_basis, chr, elec.pot, locpp->numeric, ucell, nspin, domag, domag_z, gga_grad);
 
     // force due to core charge
     this->cal_force_scc(forcescc, rho_basis, elec.vnew, elec.vnew_exist, locpp->numeric, ucell);

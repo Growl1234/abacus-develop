@@ -136,9 +136,7 @@ void Force_Stress_LCAO<T>::getForceStress(UnitCell& ucell,
         parts.fpothybrid.create(nat, 3); // pulay force for hybrid gauge rt-tddft
 
         // calculate basic terms in Force, same method with PW base
-        this->calForcePwPart(ucell, parts.fvl_dvl, parts.fewalds, parts.fcc, parts.fscc,
-                             pelec->f_en.etxc, pelec->vnew, pelec->vnew_exist, pelec->charge, rhopw,
-                             locpp, sf, cfg);
+        this->calForcePwPart(ucell, parts.fvl_dvl, parts.fewalds, parts.fcc, parts.fscc, *pelec, rhopw, locpp, sf, cfg);
     }
 
     // total stress : ModuleBase::matrix scs
@@ -160,9 +158,9 @@ void Force_Stress_LCAO<T>::getForceStress(UnitCell& ucell,
         sparts.svnl_dalpha.create(3, 3);
 
         // calculate basic terms in Stress, similar method with PW base
-        this->sc_pw.stress_pw_terms(ucell, sparts.sigmadvl, sparts.sigmahar, sparts.sigmaewa,
-                                    sparts.sigmacc, sparts.sigmaxc, pelec->f_en.etxc, pelec->charge,
-                                    rhopw, locpp, sf, cfg.nspin, cfg.domag, cfg.domag_z, cfg.gga_grad, cfg.gamma_only_pw);
+        this->sc_pw.stress_pw_terms(
+            ucell, sparts.sigmadvl, sparts.sigmahar, sparts.sigmaewa, sparts.sigmacc, sparts.sigmaxc, *pelec, rhopw,
+            locpp, sf, cfg.nspin, cfg.domag, cfg.domag_z, cfg.gga_grad, cfg.gamma_only_pw);
     }
     // Calculate operator-based force/stress terms (kinetic, overlap,
     // nonlocal, rt-TDDFT hybrid gauge, local Pulay term and DeltaSpin).
@@ -397,30 +395,29 @@ void Force_Stress_LCAO<T>::cal_operator_fs(UnitCell& ucell,
 
 // local pseudopotential, ewald, core correction, scc terms in force
 template <typename T>
-void Force_Stress_LCAO<T>::calForcePwPart(UnitCell& ucell,
-                                          ModuleBase::matrix& fvl_dvl,
-                                          ModuleBase::matrix& fewalds,
-                                          ModuleBase::matrix& fcc,
-                                          ModuleBase::matrix& fscc,
-                                          const double& etxc,
-                                          const ModuleBase::matrix& vnew,
-                                          const bool vnew_exist,
-                                          const Charge* const chr,
-                                          ModulePW::PW_Basis* rhopw,
-                                          const pseudopot_cell_vl& locpp,
-                                          const Structure_Factor& sf,
-                                          const FSCalcConfig& cfg)
+void Force_Stress_LCAO<T>::calForcePwPart(
+    UnitCell &ucell,
+    ModuleBase::matrix &fvl_dvl,
+    ModuleBase::matrix &fewalds,
+    ModuleBase::matrix &fcc,
+    ModuleBase::matrix &fscc,
+    const elecstate::ElecState &elec,
+    ModulePW::PW_Basis *rhopw,
+    const pseudopot_cell_vl &locpp,
+    const Structure_Factor &sf,
+    const FSCalcConfig &cfg)
 {
     ModuleBase::TITLE("Force_Stress_LCAO", "calForcePwPart");
+    const Charge *chr = elec.charge;
 #ifdef __CUDA
     if (cfg.device == "gpu")
     {
         Forces<double, base_device::DEVICE_GPU> f_pw(nat);
         f_pw.cal_force_loc(ucell, fvl_dvl, rhopw, locpp.vloc, chr);
         f_pw.cal_force_ew(ucell, fewalds, rhopw, &sf);
-        f_pw.cal_force_cc(fcc, rhopw, chr, locpp.numeric, ucell,
-                          cfg.nspin, cfg.domag, cfg.domag_z, cfg.gga_grad);
-        f_pw.cal_force_scc(fscc, rhopw, vnew, vnew_exist, locpp.numeric, ucell);
+        f_pw.cal_force_cc(
+            fcc, rhopw, chr, elec.pot, locpp.numeric, ucell, cfg.nspin, cfg.domag, cfg.domag_z, cfg.gga_grad);
+        f_pw.cal_force_scc(fscc, rhopw, elec.vnew, elec.vnew_exist, locpp.numeric, ucell);
     }
     else
 #endif
@@ -428,9 +425,9 @@ void Force_Stress_LCAO<T>::calForcePwPart(UnitCell& ucell,
         Forces<double, base_device::DEVICE_CPU> f_pw(nat);
         f_pw.cal_force_loc(ucell, fvl_dvl, rhopw, locpp.vloc, chr);
         f_pw.cal_force_ew(ucell, fewalds, rhopw, &sf);
-        f_pw.cal_force_cc(fcc, rhopw, chr, locpp.numeric, ucell,
-                          cfg.nspin, cfg.domag, cfg.domag_z, cfg.gga_grad);
-        f_pw.cal_force_scc(fscc, rhopw, vnew, vnew_exist, locpp.numeric, ucell);
+        f_pw.cal_force_cc(
+            fcc, rhopw, chr, elec.pot, locpp.numeric, ucell, cfg.nspin, cfg.domag, cfg.domag_z, cfg.gga_grad);
+        f_pw.cal_force_scc(fscc, rhopw, elec.vnew, elec.vnew_exist, locpp.numeric, ucell);
     }
 
     return;

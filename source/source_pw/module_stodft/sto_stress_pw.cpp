@@ -55,15 +55,15 @@ void Sto_Stress_PW<FPTYPE, Device>::cal_stress(const int nspin,
     {
         sigmaxc(i, i) = -(elec.f_en.etxc - elec.f_en.vtxc) / this->ucell->omega;
     }
-    this->stress_gga(ucell_in, sigmaxc, rho_basis, chr,
-        nspin, domag, domag_z, gga_grad);
+    this->stress_gga(ucell_in, sigmaxc, rho_basis, chr, nspin, domag, domag_z, gga_grad, elec.pot);
 
     // local contribution
     this->stress_loc(ucell_in, sigmaloc, rho_basis, locpp->vloc, p_sf, true, chr);
 
     // nlcc
-    this->stress_cc(sigmaxcc, rho_basis, ucell_in, p_sf, true, locpp->numeric, chr,
-        nspin, domag, domag_z, gga_grad, gamma_only_pw);
+    this->stress_cc(
+        sigmaxcc, rho_basis, ucell_in, p_sf, true, locpp->numeric, chr, nspin, domag, domag_z, gga_grad, gamma_only_pw,
+        elec.pot);
 
     // nonlocal
     this->sto_stress_nl(sigmanl, wg, p_sf, p_symm, p_kv, wfc_basis, *nlpp, ucell_in, psi_in, stowf);

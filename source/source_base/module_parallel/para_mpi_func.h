@@ -61,6 +61,15 @@ void allgather_int(int& v, int* all, const ParaWorld& world);
  */
 void allgatherv_double(const double* send, int send_count, double* recv, const int* recv_counts, const int* displs, const ParaWorld& world);
 
+void alltoallv_double(
+    const double *send,
+    const int *send_counts,
+    const int *send_displs,
+    double *recv,
+    const int *recv_counts,
+    const int *recv_displs,
+    const ParaWorld &world);
+
 } // namespace Parallel
 
 #endif // PARA_MPI_FUNC_H

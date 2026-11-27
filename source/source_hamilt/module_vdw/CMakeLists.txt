@@ -18,6 +18,12 @@ if(ENABLE_DFTD4)
   target_link_libraries(vdw PUBLIC dftd4::dftd4)
 endif()
 
+if(ENABLE_LIBVDWXC)
+  target_sources(${ABACUS_BIN_NAME} PRIVATE vdw_nonloc.cpp)
+  target_compile_definitions(
+    ${ABACUS_BIN_NAME} PRIVATE $<$<BOOL:${VDWXC_ENABLE_MPI}>:VDWXC_ENABLE_MPI>)
+endif()
+
 if(ENABLE_COVERAGE)
   add_coverage(vdw)
 endif()

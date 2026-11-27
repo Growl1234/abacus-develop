@@ -91,6 +91,7 @@ class Forces
         ModuleBase::matrix &forcecc,
         const ModulePW::PW_Basis *const rho_basis,
         const Charge *const chr,
+        const elecstate::Potential *pot,
         const bool *numeric,
         UnitCell &ucell_in,
         const int nspin,

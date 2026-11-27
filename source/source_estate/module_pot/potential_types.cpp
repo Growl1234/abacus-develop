@@ -22,6 +22,21 @@
 namespace elecstate
 {
 
+#ifdef __LIBVDWXC
+vdw::Nonloc *Potential::nonloc() const
+{
+    for (const PotBase *component : this->components)
+    {
+        const PotXC *xc = dynamic_cast<const PotXC *>(component);
+        if (xc != nullptr)
+        {
+            return xc->nonloc.get();
+        }
+    }
+    return nullptr;
+}
+#endif
+
 PotBase* Potential::make_sccs_pot(const Input_para& input, const SccsResume& resume)
 {
     ModuleSccs::SccsConfig config;
@@ -57,8 +72,19 @@ PotBase* Potential::get_pot_type(const std::string& pot_type, const Input_para& 
     else if (pot_type == "xc")
     {
         const bool xc_gpu = input.device_xc == "gpu";
-        return new PotXC(PARAM.globalv.domag, PARAM.globalv.domag_z, input.gga_grad, xc_gpu,
-                         this->rho_basis_, this->etxc_, this->vtxc_, &(this->vofk_eff));
+        auto *xc = new PotXC(
+            PARAM.globalv.domag, PARAM.globalv.domag_z, input.gga_grad, xc_gpu, this->rho_basis_, this->etxc_,
+            this->vtxc_, &(this->vofk_eff));
+#ifdef __LIBVDWXC
+        if (vdw::is_nonloc(input.vdw_method))
+        {
+            xc->nonloc.reset(
+                new vdw::Nonloc(input.vdw_method, input.rvv10_b, input.rvv10_c, input.nspin, *this->rho_basis_));
+            // If the SCF loop is skipped, the initial potential is the only density update.
+            xc->nonloc->request_stress(input.cal_stress && input.scf_nmax <= 0);
+        }
+#endif
+        return xc;
     }
     else if (pot_type == "pcc" || pot_type == "pcc_2d")
     {
